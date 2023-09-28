@@ -175,6 +175,7 @@ name = "cli"
 version = "0.1.0"
 dependencies = [
  "prost",
+ "prost-types",
  "rpassword",
  "tokio",
  "tonic",

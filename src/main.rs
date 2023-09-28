@@ -7,6 +7,7 @@ use std::{
 use rpassword::read_password;
 use rpc::{
     auth::AuthService,
+    server::ServerService,
     ycchat_auth::{SignInResponse, SignUpResponse},
 };
 
@@ -29,11 +30,67 @@ impl FromStr for SignAction {
     }
 }
 
+enum Step01Action {
+    SelectServer,
+    CreateServer,
+    Exit,
+}
+
+impl FromStr for Step01Action {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "0" => Ok(Self::Exit),
+            "1" => Ok(Self::SelectServer),
+            "2" => Ok(Self::CreateServer),
+            _ => Err(()),
+        }
+    }
+}
+
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
     println!("Welcome!");
 
-    let sign_in_response = loop {
+    let mut auth_service = AuthService::new().await?;
+
+    let sign_in_response = sign_process(&mut auth_service).await?;
+
+    let mut server_service = ServerService::new(sign_in_response).await?;
+
+    println!("Choose Server Action");
+    println!("[0]: Exit");
+    println!("[1]: SelectServer");
+    println!("[2]: CreateServer");
+
+    loop {
+        let mut server_action = String::new();
+        let _ = io::stdin().read_line(&mut server_action);
+
+        let action = match Step01Action::from_str(server_action.trim()) {
+            Ok(res) => res,
+            Err(_) => return Err("server action error".into()),
+        };
+
+        match action {
+            Step01Action::SelectServer => {
+                let list = server_service.list_server().await?;
+            }
+            Step01Action::CreateServer => {
+                let created_server = server_service.create_server().await?;
+            }
+            Step01Action::Exit => break,
+        }
+    }
+
+    Ok(())
+}
+
+pub async fn sign_process(
+    auth_service: &mut AuthService,
+) -> Result<SignInResponse, Box<dyn Error>> {
+    return loop {
         println!("[0]: sign up");
         println!("[1]: sign in");
 
@@ -45,11 +102,9 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
             Err(_) => continue,
         };
 
-        let mut auth_service = AuthService::new().await?;
-
         match sign_action {
             SignAction::SignUp => {
-                match sign_up(&mut auth_service).await {
+                match sign_up(auth_service).await {
                     Ok(_) => {
                         println!("sign up success!");
                     }
@@ -61,7 +116,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
             }
             SignAction::SignIn => match sign_in(auth_service).await {
                 Ok(res) => {
-                    break res;
+                    break Ok(res);
                 }
                 Err(err) => {
                     eprintln!("{}", err);
@@ -70,11 +125,9 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
             },
         };
     };
-
-    Ok(())
 }
 
-pub async fn sign_in(mut auth_service: AuthService) -> Result<SignInResponse, Box<dyn Error>> {
+pub async fn sign_in(auth_service: &mut AuthService) -> Result<SignInResponse, Box<dyn Error>> {
     println!("\nSign In");
 
     let username = {
