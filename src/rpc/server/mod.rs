@@ -24,9 +24,9 @@ impl ServerService {
         Ok(Self { client })
     }
 
-    pub async fn create_server(&mut self) -> Result<Server, Box<dyn Error>> {
+    pub async fn create_server(&mut self, server: Server) -> Result<Server, Box<dyn Error>> {
         let request = CreateServerRequest {
-            server: None, // FIXME
+            server: Some(server),
         };
 
         let response = self.client.create_server(request).await?;

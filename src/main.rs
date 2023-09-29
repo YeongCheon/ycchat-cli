@@ -7,6 +7,7 @@ use std::{
 use rpassword::read_password;
 use rpc::{
     auth::AuthService,
+    model::Server,
     server::ServerService,
     ycchat_auth::{SignInResponse, SignUpResponse},
 };
@@ -75,10 +76,33 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
 
         match action {
             Step01Action::SelectServer => {
-                let list = server_service.list_server().await?;
+                let list_server_response = server_service.list_server().await?;
+                println!("server list size: {}", list_server_response.servers.len());
+
+                list_server_response.servers.iter().for_each(|item| {
+                    println!("{item:?}");
+                });
             }
             Step01Action::CreateServer => {
-                let created_server = server_service.create_server().await?;
+                let display_name = read_line("input display_name: ");
+                let description = read_line("input description: ");
+                let icon = None;
+                let categories = vec![];
+                let channels = vec![];
+
+                let server = Server {
+                    name: String::new(),
+                    display_name,
+                    description,
+                    icon,
+                    categories,
+                    channels,
+                    create_time: None,
+                    update_time: None,
+                };
+
+                let created_server = server_service.create_server(server).await?;
+                println!("{created_server:?}");
             }
             Step01Action::Exit => break,
         }
@@ -130,22 +154,8 @@ pub async fn sign_process(
 pub async fn sign_in(auth_service: &mut AuthService) -> Result<SignInResponse, Box<dyn Error>> {
     println!("\nSign In");
 
-    let username = {
-        print!("input username: ");
-        io::stdout().flush().unwrap();
-
-        let mut username = String::new();
-        let _ = io::stdin().read_line(&mut username);
-        username.trim().to_string()
-    };
-
-    let password = {
-        print!("input password: ");
-        io::stdout().flush().unwrap();
-
-        let password: String = read_password().unwrap();
-        password.trim().to_string()
-    };
+    let username = read_line("input username: ");
+    let password = read_line("input password: ");
 
     let response = auth_service
         .sign_in(username.to_string(), password.to_string())
@@ -157,39 +167,10 @@ pub async fn sign_in(auth_service: &mut AuthService) -> Result<SignInResponse, B
 pub async fn sign_up(auth_service: &mut AuthService) -> Result<SignUpResponse, Box<dyn Error>> {
     println!("\nSign Up");
 
-    let email: String = {
-        print!("input email: ");
-        io::stdout().flush().unwrap();
-
-        let mut email = String::new();
-        let _ = io::stdin().read_line(&mut email);
-        email.trim().to_string()
-    };
-
-    let username: String = {
-        print!("input username: ");
-        io::stdout().flush().unwrap();
-
-        let mut username = String::new();
-        let _ = io::stdin().read_line(&mut username);
-        username.trim().to_string()
-    };
-
-    let password: String = {
-        print!("input password: ");
-        io::stdout().flush().unwrap();
-
-        let password: String = read_password().unwrap();
-        password.trim().to_string()
-    };
-
-    let password_again: String = {
-        print!("input password again: ");
-        io::stdout().flush().unwrap();
-
-        let password_again: String = read_password().unwrap();
-        password_again.trim().to_string()
-    };
+    let email = read_line("input email: ");
+    let username = read_line("input username: ");
+    let password = read_line("input password: ");
+    let password_again = read_line("input password again: ");
 
     if password != password_again {
         return Result::Err("invalid password.".into());
@@ -198,4 +179,13 @@ pub async fn sign_up(auth_service: &mut AuthService) -> Result<SignUpResponse, B
     let response = auth_service.sign_up(email, username, password).await?;
 
     Ok(response)
+}
+
+fn read_line(msg: &str) -> String {
+    print!("{msg}");
+    io::stdout().flush().unwrap();
+
+    let mut buf = String::new();
+    let _ = io::stdin().read_line(&mut buf);
+    buf.trim().to_string()
 }
