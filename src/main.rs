@@ -155,7 +155,13 @@ pub async fn sign_in(auth_service: &mut AuthService) -> Result<SignInResponse, B
     println!("\nSign In");
 
     let username = read_line("input username: ");
-    let password = read_line("input password: ");
+    let password = {
+        print!("input password: ");
+        io::stdout().flush().unwrap();
+
+        let password: String = read_password().unwrap();
+        password.trim().to_string()
+    };
 
     let response = auth_service
         .sign_in(username.to_string(), password.to_string())
@@ -169,8 +175,20 @@ pub async fn sign_up(auth_service: &mut AuthService) -> Result<SignUpResponse, B
 
     let email = read_line("input email: ");
     let username = read_line("input username: ");
-    let password = read_line("input password: ");
-    let password_again = read_line("input password again: ");
+    let password = {
+        print!("input password: ");
+        io::stdout().flush().unwrap();
+
+        let password: String = read_password().unwrap();
+        password.trim().to_string()
+    };
+    let password_again = {
+        print!("input password again: ");
+        io::stdout().flush().unwrap();
+
+        let password: String = read_password().unwrap();
+        password.trim().to_string()
+    };
 
     if password != password_again {
         return Result::Err("invalid password.".into());
