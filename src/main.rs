@@ -1,18 +1,20 @@
+use enum_iterator::{all, Sequence};
+use inquire::Select;
+use rpassword::read_password;
+use rpc::{
+    auth::AuthService,
+    ycchat_auth::{SignInResponse, SignUpResponse},
+};
 use std::{
     error::Error,
     io::{self, Write},
     str::FromStr,
 };
-
-use rpassword::read_password;
-use rpc::{
-    auth::AuthService,
-    model::Server,
-    server::ServerService,
-    ycchat_auth::{SignInResponse, SignUpResponse},
-};
+use terminal_menu::{button, label, menu, mut_menu, run};
 
 mod rpc;
+mod server_action;
+mod user_action;
 
 enum SignAction {
     SignUp,
@@ -24,27 +26,38 @@ impl FromStr for SignAction {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "0" => Ok(Self::SignUp),
-            "1" => Ok(Self::SignIn),
+            "sign up" => Ok(Self::SignUp),
+            "sign in" => Ok(Self::SignIn),
             _ => Err(()),
         }
     }
 }
 
-enum Step01Action {
-    SelectServer,
-    CreateServer,
-    Exit,
+#[derive(Debug, PartialEq, Sequence)]
+enum Action {
+    Account,
+    User,
+    Server,
 }
 
-impl FromStr for Step01Action {
+impl Action {
+    fn value(&self) -> &str {
+        match self {
+            Action::Account => "account",
+            Action::User => "user",
+            Action::Server => "server",
+        }
+    }
+}
+
+impl FromStr for Action {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "0" => Ok(Self::Exit),
-            "1" => Ok(Self::SelectServer),
-            "2" => Ok(Self::CreateServer),
+        match s.to_lowercase().as_str() {
+            "account" => Ok(Self::Account),
+            "user" => Ok(Self::User),
+            "server" => Ok(Self::Server),
             _ => Err(()),
         }
     }
@@ -58,53 +71,43 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
 
     let sign_in_response = sign_process(&mut auth_service).await?;
 
-    let mut server_service = ServerService::new(sign_in_response).await?;
+    let action = {
+        let mut items = vec![
+            // label:
+            //  not selectable, useful as a title, separator, etc...
+            label("----------------------"),
+            label("terminal-menu"),
+            label("use wasd or arrow keys"),
+            label("enter to select"),
+            label("'q' or esc to exit"),
+            label("-----------------------"),
+        ];
 
-    println!("Choose Server Action");
-    println!("[0]: Exit");
-    println!("[1]: SelectServer");
-    println!("[2]: CreateServer");
+        all::<Action>().for_each(|action| {
+            let item = button(action.value());
+            items.push(item);
+        });
 
-    loop {
-        let mut server_action = String::new();
-        let _ = io::stdin().read_line(&mut server_action);
+        let menu = menu(items);
+        run(&menu);
 
-        let action = match Step01Action::from_str(server_action.trim()) {
-            Ok(res) => res,
-            Err(_) => return Err("server action error".into()),
-        };
+        // reference1: https://users.rust-lang.org/t/creates-a-temporary-which-is-freed-while-still-in-use-again/29211/2?u=yeongcheon
+        // reference2: https://www.christopherbiscardi.com/rust-creates-a-temporary-which-is-freed-while-still-in-use
+        let selected_item = mut_menu(&menu);
+        let selected_item = selected_item.selected_item_name();
+        let selected_item = selected_item.trim();
 
-        match action {
-            Step01Action::SelectServer => {
-                let list_server_response = server_service.list_server().await?;
-                println!("server list size: {}", list_server_response.servers.len());
+        match Action::from_str(selected_item) {
+            Ok(action) => action,
+            Err(_) => return Err("parse action error".into()),
+        }
+    };
 
-                list_server_response.servers.iter().for_each(|item| {
-                    println!("{item:?}");
-                });
-            }
-            Step01Action::CreateServer => {
-                let display_name = read_line("input display_name: ");
-                let description = read_line("input description: ");
-                let icon = None;
-                let categories = vec![];
-                let channels = vec![];
-
-                let server = Server {
-                    name: String::new(),
-                    display_name,
-                    description,
-                    icon,
-                    categories,
-                    channels,
-                    create_time: None,
-                    update_time: None,
-                };
-
-                let created_server = server_service.create_server(server).await?;
-                println!("{created_server:?}");
-            }
-            Step01Action::Exit => break,
+    match action {
+        Action::Account => todo!(),
+        Action::User => todo!(),
+        Action::Server => {
+            server_action::server_action(sign_in_response).await?;
         }
     }
 
@@ -115,11 +118,10 @@ pub async fn sign_process(
     auth_service: &mut AuthService,
 ) -> Result<SignInResponse, Box<dyn Error>> {
     return loop {
-        println!("[0]: sign up");
-        println!("[1]: sign in");
+        let sign_action = Select::new("Sign:", vec!["sign up", "sign in"]).prompt()?;
 
-        let mut sign_action = String::new();
-        let _ = io::stdin().read_line(&mut sign_action);
+        // let mut sign_action = String::new();
+        // let _ = io::stdin().read_line(&mut sign_action);
 
         let sign_action = match SignAction::from_str(sign_action.trim()) {
             Ok(res) => res,
@@ -199,7 +201,7 @@ pub async fn sign_up(auth_service: &mut AuthService) -> Result<SignUpResponse, B
     Ok(response)
 }
 
-fn read_line(msg: &str) -> String {
+pub fn read_line(msg: &str) -> String {
     print!("{msg}");
     io::stdout().flush().unwrap();
 
