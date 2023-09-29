@@ -6,6 +6,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &[
                 "protobuf/model/server.proto",
                 "protobuf/auth/auth.proto",
+                "protobuf/user/user.proto",
                 "protobuf/server/server.proto",
             ],
             &["protobuf/"],
