@@ -1,3 +1,4 @@
+pub mod account;
 pub mod auth;
 pub mod server;
 pub mod user;
@@ -10,6 +11,10 @@ pub mod model {
 
 pub mod ycchat_auth {
     tonic::include_proto!("ycchat.auth");
+}
+
+pub mod ycchat_account {
+    tonic::include_proto!("ycchat.account");
 }
 
 pub mod ycchat_user {

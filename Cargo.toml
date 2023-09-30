@@ -10,8 +10,6 @@ enum-iterator = "1.4.1"
 inquire = "0.6.2"
 prost = "0.12.1"
 prost-types = "0.12.1"
-rpassword = "7.2.0"
-terminal-menu = "2.0.6"
 tokio = {verseion = "1.32.0", features = ["macros", "rt-multi-thread"]}
 tonic = "0.10.1"
 ulid = { version = "1.1.0", features = ["serde"] }

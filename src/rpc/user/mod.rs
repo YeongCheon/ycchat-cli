@@ -27,7 +27,7 @@ impl UserService {
         Ok(Self { client })
     }
 
-    pub async fn get_user(&mut self, user_id: Ulid) -> Result<User, Box<dyn Error>> {
+    pub async fn get_user(&mut self, user_id: UserId) -> Result<User, Box<dyn Error>> {
         let name = format!("users/{}", user_id);
         let request = GetUserRequest { name };
 

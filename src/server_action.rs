@@ -1,55 +1,50 @@
-use std::{error::Error, io, str::FromStr};
+use std::{error::Error, fmt::Display};
+
+use enum_iterator::{all, Sequence};
+use inquire::{Select, Text};
 
 use crate::rpc::{model::Server, server::ServerService, ycchat_auth::SignInResponse};
 
+#[derive(Debug, PartialEq, Sequence)]
 enum ServerAction {
-    SelectServer,
-    CreateServer,
+    List,
+    Create,
     Exit,
 }
 
-impl FromStr for ServerAction {
-    type Err = ();
+impl Display for ServerAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = match self {
+            ServerAction::List => "List",
+            ServerAction::Create => "Create",
+            ServerAction::Exit => "Exit",
+        };
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "0" => Ok(Self::Exit),
-            "1" => Ok(Self::SelectServer),
-            "2" => Ok(Self::CreateServer),
-            _ => Err(()),
-        }
+        write!(f, "{}", text)
     }
 }
 
 pub async fn server_action(sign_in_response: SignInResponse) -> Result<(), Box<dyn Error>> {
     let mut server_service = ServerService::new(sign_in_response).await?;
 
-    println!("Choose Server Action");
-    println!("[0]: Exit");
-    println!("[1]: SelectServer");
-    println!("[2]: CreateServer");
-
     loop {
-        let mut server_action = String::new();
-        let _ = io::stdin().read_line(&mut server_action);
-
-        let action = match ServerAction::from_str(server_action.trim()) {
-            Ok(res) => res,
-            Err(_) => return Err("server action error".into()),
+        let action = {
+            let items = all::<ServerAction>().collect();
+            Select::new("ServerAction:", items).prompt()?
         };
 
         match action {
-            ServerAction::SelectServer => {
+            ServerAction::List => {
                 let list_server_response = server_service.list_server().await?;
                 println!("server list size: {}", list_server_response.servers.len());
 
                 list_server_response.servers.iter().for_each(|item| {
-                    println!("{item:?}");
+                    println!("{item:#?}");
                 });
             }
-            ServerAction::CreateServer => {
-                let display_name = super::read_line("input display_name: ");
-                let description = super::read_line("input description: ");
+            ServerAction::Create => {
+                let display_name = Text::new("input display_name:").prompt()?;
+                let description = Text::new("input description:").prompt()?;
                 let icon = None;
                 let categories = vec![];
                 let channels = vec![];
@@ -66,7 +61,7 @@ pub async fn server_action(sign_in_response: SignInResponse) -> Result<(), Box<d
                 };
 
                 let created_server = server_service.create_server(server).await?;
-                println!("{created_server:?}");
+                println!("{created_server:#?}");
             }
             ServerAction::Exit => return Ok(()),
         }

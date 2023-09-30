@@ -1,9 +1,12 @@
-use std::{error::Error, str::FromStr};
+use std::{error::Error, fmt::Display, str::FromStr};
 
-use crate::rpc::{model::User, user::UserService, ycchat_auth::SignInResponse};
+use crate::rpc::{
+    model::User,
+    user::{UserId, UserService},
+    ycchat_auth::SignInResponse,
+};
 use enum_iterator::{all, Sequence};
-use terminal_menu::{button, label, menu, mut_menu, run};
-use ulid::Ulid;
+use inquire::{Select, Text};
 
 #[derive(Debug, PartialEq, Sequence)]
 enum UserAction {
@@ -11,16 +14,20 @@ enum UserAction {
     Create,
     Update,
     Delete,
+    Exit,
 }
 
-impl UserAction {
-    fn value(&self) -> &str {
-        match self {
+impl Display for UserAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = match self {
             UserAction::Get => "get",
             UserAction::Create => "create",
             UserAction::Update => "update",
             UserAction::Delete => "delete",
-        }
+            UserAction::Exit => "exit",
+        };
+
+        write!(f, "{}", text)
     }
 }
 
@@ -33,103 +40,91 @@ impl FromStr for UserAction {
             "create" => Ok(Self::Create),
             "update" => Ok(Self::Update),
             "delete" => Ok(Self::Delete),
+            "exit" => Ok(Self::Exit),
             _ => Err(()),
         }
     }
 }
 
 pub async fn action(sign_in_response: SignInResponse) -> Result<(), Box<dyn Error>> {
+    let user_id = UserId::from_string(&sign_in_response.user_id)?;
     let mut user_service = UserService::new(sign_in_response).await?;
 
     let action = {
-        let mut items = vec![
-            // label:
-            //  not selectable, useful as a title, separator, etc...
-            label("----------------------"),
-            label("terminal-menu"),
-            label("use wasd or arrow keys"),
-            label("enter to select"),
-            label("'q' or esc to exit"),
-            label("-----------------------"),
-        ];
+        let items = all::<UserAction>().collect();
 
-        all::<UserAction>().for_each(|action| {
-            let item = button(action.value());
-            items.push(item);
-        });
-
-        let menu = menu(items);
-        run(&menu);
-
-        let selected_item = mut_menu(&menu);
-        let selected_item = selected_item.selected_item_name();
-        let selected_item = selected_item.trim();
-
-        match UserAction::from_str(selected_item) {
-            Ok(action) => action,
-            Err(_) => return Err("parse action error".into()),
-        }
+        Select::new("UserAction:", items).prompt()?
     };
 
     match action {
         UserAction::Get => {
-            let user_id = Ulid::new(); // FIXME
-            user_service.get_user(user_id).await?;
+            let res = user_service.get_user(user_id).await?;
+
+            println!("{:#?}", res);
         }
         UserAction::Create => {
-            let user_id = Ulid::new(); // FIXME
             let name = format!("user/{}", user_id);
 
-            let display_name = "display_name".to_string(); // FIXME
-            let description = "description".to_string(); // FIXME
             let avatar = None;
-            let region_code = "3".to_string();
-            let language_code = "ko-KR".to_string();
-            let time_zone = "Asia/Seoul".to_string();
+
+            let display_name = Text::new("input display_name:").prompt()?;
+            let description = Text::new("input description:").prompt()?;
+            let region_code = Select::new("select region_code:", vec!["1", "2", "3"]).prompt()?;
+            let language_code =
+                Select::new("select language_code:", vec!["ko-KR", "en-US"]).prompt()?;
+            let time_zone = Select::new("select time_zone:", vec!["Asia/Seoul"]).prompt()?;
 
             let user = User {
                 name,
                 display_name,
                 description,
                 avatar,
-                region_code: Some(region_code),
-                language_code: Some(language_code),
-                time_zone: Some(time_zone),
+                region_code: Some(region_code.to_string()),
+                language_code: Some(language_code.to_string()),
+                time_zone: Some(time_zone.to_string()),
                 create_time: None,
                 update_time: None,
             };
 
-            user_service.create_user(user).await?;
+            let res = user_service.create_user(user).await?;
+
+            println!("{:#?}", res);
         }
         UserAction::Update => {
-            let user_id = Ulid::new(); // FIXME
             let name = format!("user/{}", user_id);
 
-            let display_name = "display_name".to_string(); // FIXME
-            let description = "description".to_string(); // FIXME
+            let display_name = Text::new("input display_name:").prompt()?;
+            let description = Text::new("input description:").prompt()?;
+            let region_code = Select::new("select region_code:", vec!["1", "2", "3"]).prompt()?;
+            let language_code =
+                Select::new("select language_code:", vec!["ko-KR", "en-US"]).prompt()?;
+            let time_zone = Select::new("select time_zone:", vec!["Asia/Seoul"]).prompt()?;
+
             let avatar = None;
-            let region_code = "3".to_string();
-            let language_code = "ko-KR".to_string();
-            let time_zone = "Asia/Seoul".to_string();
 
             let user = User {
                 name,
                 display_name,
                 description,
                 avatar,
-                region_code: Some(region_code),
-                language_code: Some(language_code),
-                time_zone: Some(time_zone),
+                region_code: Some(region_code.to_string()),
+                language_code: Some(language_code.to_string()),
+                time_zone: Some(time_zone.to_string()),
                 create_time: None,
                 update_time: None,
             };
 
-            user_service.update_user(user).await?;
+            let res = user_service.update_user(user).await?;
+
+            println!("{:#?}", res);
         }
         UserAction::Delete => {
-            let user_id = Ulid::new(); // FIXME
             user_service.delete_user(user_id).await?;
+
+            println!("delete complete");
         }
+
+        UserAction::Exit => return Ok(()),
     }
 
     Ok(())
