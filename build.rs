@@ -9,6 +9,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "protobuf/account/account.proto",
                 "protobuf/user/user.proto",
                 "protobuf/server/server.proto",
+                "protobuf/server/category/category.proto",
+                "protobuf/server/member/server_member.proto",
             ],
             &["protobuf/"],
         )?;
