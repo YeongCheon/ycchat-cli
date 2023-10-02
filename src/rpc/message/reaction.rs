@@ -1,14 +1,16 @@
 use std::error::Error;
+use std::sync::Arc;
 
-use crate::rpc::interceptor::AuthInterceptor;
+use crate::rpc::interceptor::AuthMiddleware;
 use crate::rpc::model::Reaction;
 use crate::rpc::ycchat_auth::SignInResponse;
 use crate::rpc::ycchat_message::reaction_client::ReactionClient;
 use crate::rpc::ycchat_message::{
     AddReactionRequest, DeleteReactionRequest, ListReactionsRequest, ListReactionsResponse,
 };
-use tonic::service::interceptor::InterceptedService;
+use tokio::sync::Mutex;
 use tonic::transport::Channel;
+use tower::ServiceBuilder;
 use ulid::Ulid;
 
 use super::MessageId;
@@ -16,16 +18,20 @@ use super::MessageId;
 pub type ReactionId = Ulid;
 
 pub struct ReactionService {
-    client: ReactionClient<InterceptedService<Channel, AuthInterceptor>>,
+    client: ReactionClient<AuthMiddleware>,
 }
 
 impl ReactionService {
-    pub async fn new(sign_in_res: SignInResponse) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(auth_state: Arc<Mutex<SignInResponse>>) -> Result<Self, Box<dyn Error>> {
         let channel = Channel::from_static("http://127.0.0.1:50051")
             .connect()
             .await?;
 
-        let client = ReactionClient::with_interceptor(channel, AuthInterceptor::new(sign_in_res));
+        let auth_middleware = AuthMiddleware::new(channel.clone(), auth_state);
+
+        let channel = ServiceBuilder::new().service(auth_middleware);
+
+        let client = ReactionClient::new(channel);
 
         Ok(Self { client })
     }

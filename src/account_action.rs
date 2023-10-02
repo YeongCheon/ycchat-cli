@@ -1,7 +1,8 @@
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt::Display, sync::Arc};
 
 use enum_iterator::{all, Sequence};
 use inquire::{Password, Select, Text};
+use tokio::sync::Mutex;
 
 use crate::rpc::{account::AccountService, ycchat_auth::SignInResponse};
 
@@ -24,8 +25,8 @@ impl Display for AccountAction {
     }
 }
 
-pub async fn action(sign_in_response: SignInResponse) -> Result<(), Box<dyn Error>> {
-    let mut account_service = AccountService::new(sign_in_response).await?;
+pub async fn action(auth_state: Arc<Mutex<SignInResponse>>) -> Result<(), Box<dyn Error>> {
+    let mut account_service = AccountService::new(auth_state).await?;
 
     loop {
         let action = {

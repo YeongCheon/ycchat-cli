@@ -1,6 +1,7 @@
 use std::error::Error;
+use std::sync::Arc;
 
-use super::interceptor::AuthInterceptor;
+use super::interceptor::AuthMiddleware;
 use super::message::MessageId;
 use super::model::Channel;
 use super::server::ServerId;
@@ -11,23 +12,28 @@ use super::ycchat_channel::{
     ListChannelMembersResponse, ListChannelMessagesRequest, ListServerChannelsRequest,
     ListServerChannelsResponse, SpeechRequest, SpeechResponse, UpdateChannelRequest,
 };
-use tonic::service::interceptor::InterceptedService;
+use tokio::sync::Mutex;
 use tonic::transport::Channel as TonicChannel;
+use tower::ServiceBuilder;
 use ulid::Ulid;
 
 pub type ChannelId = Ulid;
 
 struct ChannelService {
-    client: ChannelClient<InterceptedService<TonicChannel, AuthInterceptor>>,
+    client: ChannelClient<AuthMiddleware>,
 }
 
 impl ChannelService {
-    pub async fn new(sign_in_res: SignInResponse) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(auth_state: Arc<Mutex<SignInResponse>>) -> Result<Self, Box<dyn Error>> {
         let channel = TonicChannel::from_static("http://127.0.0.1:50051")
             .connect()
             .await?;
 
-        let client = ChannelClient::with_interceptor(channel, AuthInterceptor::new(sign_in_res));
+        let auth_middleware = AuthMiddleware::new(channel.clone(), auth_state);
+
+        let channel = ServiceBuilder::new().service(auth_middleware);
+
+        let client = ChannelClient::new(channel);
 
         Ok(Self { client })
     }

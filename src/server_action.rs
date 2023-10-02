@@ -1,7 +1,8 @@
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt::Display, sync::Arc};
 
 use enum_iterator::{all, Sequence};
 use inquire::{Select, Text};
+use tokio::sync::Mutex;
 
 use crate::rpc::{model::Server, server::ServerService, ycchat_auth::SignInResponse};
 
@@ -24,8 +25,8 @@ impl Display for ServerAction {
     }
 }
 
-pub async fn server_action(sign_in_response: SignInResponse) -> Result<(), Box<dyn Error>> {
-    let mut server_service = ServerService::new(sign_in_response).await?;
+pub async fn server_action(auth_state: Arc<Mutex<SignInResponse>>) -> Result<(), Box<dyn Error>> {
+    let mut server_service = ServerService::new(auth_state).await?;
 
     loop {
         let action = {

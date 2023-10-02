@@ -1,4 +1,4 @@
-use std::{error::Error, fmt::Display, str::FromStr};
+use std::{error::Error, fmt::Display, str::FromStr, sync::Arc};
 
 use crate::rpc::{
     model::User,
@@ -7,6 +7,7 @@ use crate::rpc::{
 };
 use enum_iterator::{all, Sequence};
 use inquire::{Select, Text};
+use tokio::sync::Mutex;
 
 #[derive(Debug, PartialEq, Sequence)]
 enum UserAction {
@@ -46,9 +47,9 @@ impl FromStr for UserAction {
     }
 }
 
-pub async fn action(sign_in_response: SignInResponse) -> Result<(), Box<dyn Error>> {
-    let user_id = UserId::from_string(&sign_in_response.user_id)?;
-    let mut user_service = UserService::new(sign_in_response).await?;
+pub async fn action(auth_state: Arc<Mutex<SignInResponse>>) -> Result<(), Box<dyn Error>> {
+    let user_id = UserId::from_string(&auth_state.lock().await.user_id)?;
+    let mut user_service = UserService::new(auth_state).await?;
 
     let action = {
         let items = all::<UserAction>().collect();

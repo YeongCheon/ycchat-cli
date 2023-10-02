@@ -1,7 +1,8 @@
 use enum_iterator::{all, Sequence};
 use inquire::Select;
 use rpc::ycchat_auth::SignInResponse;
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt::Display, sync::Arc};
+use tokio::sync::Mutex;
 
 mod account_action;
 mod rpc;
@@ -35,6 +36,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     println!("Welcome!");
 
     let sign_in_response = sign_process().await?;
+    let auth_state = Arc::new(Mutex::new(sign_in_response));
 
     loop {
         let action = {
@@ -47,9 +49,9 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         };
 
         match action {
-            Action::Account => account_action::action(sign_in_response.clone()).await?,
-            Action::User => user_action::action(sign_in_response.clone()).await?,
-            Action::Server => server_action::server_action(sign_in_response.clone()).await?,
+            Action::Account => account_action::action(auth_state.clone()).await?,
+            Action::User => user_action::action(auth_state.clone()).await?,
+            Action::Server => server_action::server_action(auth_state.clone()).await?,
             Action::Exit => break,
         }
     }

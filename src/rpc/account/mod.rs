@@ -1,24 +1,30 @@
 use std::error::Error;
+use std::sync::Arc;
 
-use tonic::service::interceptor::InterceptedService;
+use tokio::sync::Mutex;
 use tonic::transport::Channel;
+use tower::ServiceBuilder;
 
-use super::interceptor::AuthInterceptor;
+use super::interceptor::AuthMiddleware;
 use super::ycchat_account::account_client::AccountClient;
 use super::ycchat_account::{DeleteAccountRequest, UpdatePasswordRequest};
 use super::ycchat_auth::SignInResponse;
 
 pub struct AccountService {
-    client: AccountClient<InterceptedService<Channel, AuthInterceptor>>,
+    client: AccountClient<AuthMiddleware>,
 }
 
 impl AccountService {
-    pub async fn new(sign_in_res: SignInResponse) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(auth_state: Arc<Mutex<SignInResponse>>) -> Result<Self, Box<dyn Error>> {
         let channel = Channel::from_static("http://127.0.0.1:50051")
             .connect()
             .await?;
 
-        let client = AccountClient::with_interceptor(channel, AuthInterceptor::new(sign_in_res));
+        let auth_middleware = AuthMiddleware::new(channel.clone(), auth_state);
+
+        let channel = ServiceBuilder::new().service(auth_middleware);
+
+        let client = AccountClient::new(channel);
 
         Ok(Self { client })
     }

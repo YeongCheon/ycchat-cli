@@ -1,10 +1,12 @@
 use std::error::Error;
+use std::sync::Arc;
 
-use tonic::service::interceptor::InterceptedService;
+use tokio::sync::Mutex;
 use tonic::transport::Channel;
+use tower::ServiceBuilder;
 use ulid::Ulid;
 
-use super::interceptor::AuthInterceptor;
+use super::interceptor::AuthMiddleware;
 use super::model::User;
 use super::ycchat_auth::SignInResponse;
 use super::ycchat_user::user_client::UserClient;
@@ -13,16 +15,20 @@ use super::ycchat_user::{CreateUserRequest, DeleteUserRequest, GetUserRequest, U
 pub type UserId = Ulid;
 
 pub struct UserService {
-    client: UserClient<InterceptedService<Channel, AuthInterceptor>>,
+    client: UserClient<AuthMiddleware>,
 }
 
 impl UserService {
-    pub async fn new(sign_in_res: SignInResponse) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(auth_state: Arc<Mutex<SignInResponse>>) -> Result<Self, Box<dyn Error>> {
         let channel = Channel::from_static("http://127.0.0.1:50051")
             .connect()
             .await?;
 
-        let client = UserClient::with_interceptor(channel, AuthInterceptor::new(sign_in_res));
+        let auth_middleware = AuthMiddleware::new(channel.clone(), auth_state);
+
+        let channel = ServiceBuilder::new().service(auth_middleware);
+
+        let client = UserClient::new(channel);
 
         Ok(Self { client })
     }

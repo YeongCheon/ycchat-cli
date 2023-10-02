@@ -1,9 +1,11 @@
 use std::error::Error;
+use std::sync::Arc;
 
-use tonic::service::interceptor::InterceptedService;
+use tokio::sync::Mutex;
 use tonic::transport::Channel;
+use tower::ServiceBuilder;
 
-use super::interceptor::AuthInterceptor;
+use super::interceptor::AuthMiddleware;
 use super::model::ServerMember;
 use super::server::ServerId;
 use super::user::UserId;
@@ -18,17 +20,20 @@ use super::ycchat_server::member::{
 // };
 
 pub struct ServerMemberService {
-    client: ServerMemberClient<InterceptedService<Channel, AuthInterceptor>>,
+    client: ServerMemberClient<AuthMiddleware>,
 }
 
 impl ServerMemberService {
-    pub async fn new(sign_in_res: SignInResponse) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(auth_state: Arc<Mutex<SignInResponse>>) -> Result<Self, Box<dyn Error>> {
         let channel = Channel::from_static("http://127.0.0.1:50051")
             .connect()
             .await?;
 
-        let client =
-            ServerMemberClient::with_interceptor(channel, AuthInterceptor::new(sign_in_res));
+        let auth_middleware = AuthMiddleware::new(channel.clone(), auth_state);
+
+        let channel = ServiceBuilder::new().service(auth_middleware);
+
+        let client = ServerMemberClient::new(channel);
 
         Ok(Self { client })
     }
