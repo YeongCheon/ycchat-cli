@@ -69,7 +69,7 @@ pub async fn action(sign_in_response: SignInResponse) -> Result<(), Box<dyn Erro
 
             let display_name = Text::new("input display_name:").prompt()?;
             let description = Text::new("input description:").prompt()?;
-            let region_code = Select::new("select region_code:", vec!["1", "2", "3"]).prompt()?;
+            let region_code = Select::new("select region_code:", vec!["KR", "US"]).prompt()?;
             let language_code =
                 Select::new("select language_code:", vec!["ko-KR", "en-US"]).prompt()?;
             let time_zone = Select::new("select time_zone:", vec!["Asia/Seoul"]).prompt()?;
