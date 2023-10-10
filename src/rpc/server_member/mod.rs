@@ -41,8 +41,17 @@ impl ServerMemberService {
     pub async fn list_server_members(
         &mut self,
         server_id: ServerId,
+        page_size: i32,
+        page_token: Option<String>,
     ) -> Result<ListServerMembersResponse, Box<dyn Error>> {
-        let request = ListServerMembersRequest { pageable: None };
+        let parent = format!("servers/{server_id}");
+
+        let request = ListServerMembersRequest {
+            parent,
+            page_size,
+            page_token,
+        };
+
         let response = self.client.list_server_members(request).await?;
 
         Ok(response.into_inner())

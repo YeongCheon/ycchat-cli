@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use super::interceptor::AuthMiddleware;
 use super::model::Category;
+use super::server::ServerId;
 use super::ycchat_auth::SignInResponse;
 use super::ycchat_server::category::category_client::CategoryClient;
 use super::ycchat_server::category::{
@@ -35,12 +36,18 @@ impl CategoryService {
         Ok(Self { client })
     }
 
-    pub async fn list_categories(&mut self) -> Result<ListCategoriesResponse, Box<dyn Error>> {
-        let parent = format!("");
+    pub async fn list_categories(
+        &mut self,
+        server_id: ServerId,
+        page_size: i32,
+        page_token: Option<String>,
+    ) -> Result<ListCategoriesResponse, Box<dyn Error>> {
+        let parent = format!("servers/{server_id}");
 
         let request = ListCategoriesRequest {
             parent,
-            pageable: None,
+            page_size,
+            page_token,
         };
 
         let response = self.client.list_categories(request).await?;

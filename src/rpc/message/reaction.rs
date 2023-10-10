@@ -39,12 +39,15 @@ impl ReactionService {
     pub async fn list_reactions(
         &mut self,
         message_id: MessageId,
+        page_size: i32,
+        page_token: Option<String>,
     ) -> Result<ListReactionsResponse, Box<dyn Error>> {
         let parent = format!("messages/{}", message_id);
 
         let request = ListReactionsRequest {
             parent,
-            pageable: None,
+            page_size,
+            page_token,
         };
 
         let res = self.client.list_reactions(request).await?;

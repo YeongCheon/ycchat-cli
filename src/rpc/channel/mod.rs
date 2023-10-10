@@ -8,8 +8,7 @@ use super::server::ServerId;
 use super::ycchat_auth::SignInResponse;
 use super::ycchat_channel::channel_client::ChannelClient;
 use super::ycchat_channel::{
-    CreateChannelRequest, DeleteChannelRequest, ListChannelMembersRequest,
-    ListChannelMembersResponse, ListChannelMessagesRequest, ListServerChannelsRequest,
+    CreateChannelRequest, DeleteChannelRequest, ListServerChannelsRequest,
     ListServerChannelsResponse, SpeechRequest, SpeechResponse, UpdateChannelRequest,
 };
 use tokio::sync::Mutex;
@@ -41,13 +40,17 @@ impl ChannelService {
     pub async fn list_server_channels(
         &mut self,
         server_id: ServerId,
+        page_size: i32,
+        page_token: Option<String>,
     ) -> Result<ListServerChannelsResponse, Box<dyn Error>> {
         let parent = format!("servers/{}/channels", server_id);
 
         let request = ListServerChannelsRequest {
             parent,
-            pageable: None,
+            page_size,
+            page_token,
         };
+
         let res = self.client.list_server_channels(request).await?;
 
         Ok(res.into_inner())
@@ -59,22 +62,6 @@ impl ChannelService {
         };
 
         let res = self.client.create_channel(request).await?;
-
-        Ok(res.into_inner())
-    }
-
-    pub async fn list_channel_members(
-        &mut self,
-        channel_id: ChannelId,
-    ) -> Result<ListChannelMembersResponse, Box<dyn Error>> {
-        let parent = format!("channels/{}", channel_id);
-
-        let request = ListChannelMembersRequest {
-            parent,
-            pageable: None,
-        };
-
-        let res = self.client.list_channel_members(request).await?;
 
         Ok(res.into_inner())
     }
@@ -95,21 +82,6 @@ impl ChannelService {
         let request = DeleteChannelRequest { name };
 
         self.client.delete_channel(request).await?;
-
-        Ok(())
-    }
-
-    pub async fn list_channel_messages(
-        &mut self,
-        channel_id: ChannelId,
-    ) -> Result<(), Box<dyn Error>> {
-        let name = format!("channels/{}", channel_id);
-        let request = ListChannelMessagesRequest {
-            name,
-            pageable: None,
-        };
-
-        self.client.list_channel_messages(request).await?;
 
         Ok(())
     }

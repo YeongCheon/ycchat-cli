@@ -48,8 +48,15 @@ impl ServerService {
         Ok(response.into_inner())
     }
 
-    pub async fn list_server(&mut self) -> Result<ListServersResponse, Box<dyn Error>> {
-        let request = ListServersRequest { pageable: None };
+    pub async fn list_server(
+        &mut self,
+        page_size: i32,
+        page_token: Option<String>,
+    ) -> Result<ListServersResponse, Box<dyn Error>> {
+        let request = ListServersRequest {
+            page_size,
+            page_token,
+        };
 
         let response = self.client.list_servers(request).await?;
 
