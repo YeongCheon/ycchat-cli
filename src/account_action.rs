@@ -4,7 +4,7 @@ use enum_iterator::{all, Sequence};
 use inquire::{Password, Select, Text};
 use tokio::sync::Mutex;
 
-use crate::rpc::{account::AccountService, ycchat_auth::SignInResponse};
+use crate::rpc::{account::AccountService, ycchat::v1::services::auth::SignInResponse};
 
 #[derive(Debug, PartialEq, Sequence)]
 enum AccountAction {

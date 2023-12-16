@@ -6,12 +6,12 @@ use tonic::transport::Channel;
 use tower::ServiceBuilder;
 
 use super::interceptor::AuthMiddleware;
-use super::ycchat_account::account_client::AccountClient;
-use super::ycchat_account::{DeleteAccountRequest, UpdatePasswordRequest};
-use super::ycchat_auth::SignInResponse;
+use super::ycchat::v1::services::account::account_service_client::AccountServiceClient;
+use super::ycchat::v1::services::account::{DeleteAccountRequest, UpdatePasswordRequest};
+use super::ycchat::v1::services::auth::SignInResponse;
 
 pub struct AccountService {
-    client: AccountClient<AuthMiddleware>,
+    client: AccountServiceClient<AuthMiddleware>,
 }
 
 impl AccountService {
@@ -24,7 +24,7 @@ impl AccountService {
 
         let channel = ServiceBuilder::new().service(auth_middleware);
 
-        let client = AccountClient::new(channel);
+        let client = AccountServiceClient::new(channel);
 
         Ok(Self { client })
     }

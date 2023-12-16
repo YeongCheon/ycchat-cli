@@ -6,13 +6,13 @@ use tonic::transport::Channel;
 use tower::ServiceBuilder;
 use ulid::Ulid;
 
-use crate::rpc::ycchat_server::EnterServerRequest;
+use crate::rpc::ycchat::v1::services::server::EnterServerRequest;
 
 use super::interceptor::AuthMiddleware;
-use super::model::{Attachment, Server, ServerMember};
-use super::ycchat_auth::SignInResponse;
-use super::ycchat_server::server_client::ServerClient;
-use super::ycchat_server::{
+use super::ycchat::v1::models::{Attachment, Server, ServerMember};
+use super::ycchat::v1::services::auth::SignInResponse;
+use super::ycchat::v1::services::server::server_service_client::ServerServiceClient;
+use super::ycchat::v1::services::server::{
     CreateServerRequest, DeleteServerRequest, GetServerRequest, LeaveServerRequest,
     ListServersRequest, ListServersResponse, UpdateServerRequest,
 };
@@ -20,7 +20,7 @@ use super::ycchat_server::{
 pub type ServerId = Ulid;
 
 pub struct ServerService {
-    client: ServerClient<AuthMiddleware>,
+    client: ServerServiceClient<AuthMiddleware>,
 }
 
 impl ServerService {
@@ -33,7 +33,7 @@ impl ServerService {
 
         let channel = ServiceBuilder::new().service(auth_middleware);
 
-        let client = ServerClient::new(channel);
+        let client = ServerServiceClient::new(channel);
 
         Ok(Self { client })
     }

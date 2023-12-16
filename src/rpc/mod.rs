@@ -10,42 +10,48 @@ pub mod user;
 
 mod interceptor;
 
-pub mod model {
-    tonic::include_proto!("ycchat.model");
-}
+pub mod ycchat {
+    pub mod v1 {
+        pub mod models {
+            tonic::include_proto!("ycchat.v1.models");
+        }
 
-pub mod ycchat_auth {
-    tonic::include_proto!("ycchat.auth");
-}
+        pub mod services {
+            pub mod auth {
+                tonic::include_proto!("ycchat.v1.services.auth");
+            }
 
-pub mod ycchat_account {
-    tonic::include_proto!("ycchat.account");
-}
+            pub mod account {
+                tonic::include_proto!("ycchat.v1.services.account");
+            }
 
-pub mod ycchat_channel {
-    tonic::include_proto!("ycchat.channel");
-}
+            pub mod channel {
+                tonic::include_proto!("ycchat.v1.services.channel");
+            }
 
-pub mod ycchat_connect {
-    tonic::include_proto!("ycchat.connect");
-}
+            pub mod connect {
+                tonic::include_proto!("ycchat.v1.services.connect");
+            }
 
-pub mod ycchat_user {
-    tonic::include_proto!("ycchat.user");
-}
+            pub mod user {
+                tonic::include_proto!("ycchat.v1.services.user");
+            }
 
-pub mod ycchat_server {
-    tonic::include_proto!("ycchat.server");
+            pub mod server {
+                tonic::include_proto!("ycchat.v1.services.server");
 
-    pub mod category {
-        tonic::include_proto!("ycchat.server.category");
+                pub mod category {
+                    tonic::include_proto!("ycchat.v1.services.server.category");
+                }
+
+                pub mod member {
+                    tonic::include_proto!("ycchat.v1.services.server.member");
+                }
+            }
+
+            pub mod message {
+                tonic::include_proto!("ycchat.v1.services.message");
+            }
+        }
     }
-
-    pub mod member {
-        tonic::include_proto!("ycchat.server.member");
-    }
-}
-
-pub mod ycchat_message {
-    tonic::include_proto!("ycchat.message");
 }

@@ -4,7 +4,9 @@ use enum_iterator::{all, Sequence};
 use inquire::{Select, Text};
 use tokio::sync::Mutex;
 
-use crate::rpc::{model::Server, server::ServerService, ycchat_auth::SignInResponse};
+use crate::rpc::{
+    server::ServerService, ycchat::v1::models::Server, ycchat::v1::services::auth::SignInResponse,
+};
 
 #[derive(Debug, PartialEq, Sequence)]
 enum ServerAction {
@@ -36,7 +38,11 @@ pub async fn server_action(auth_state: Arc<Mutex<SignInResponse>>) -> Result<(),
 
         match action {
             ServerAction::List => {
-                let list_server_response = server_service.list_server().await?;
+                let page_size = 0; // FIXME
+                let page_token = None;
+
+                let list_server_response =
+                    server_service.list_server(page_size, page_token).await?;
                 println!("server list size: {}", list_server_response.servers.len());
 
                 list_server_response.servers.iter().for_each(|item| {

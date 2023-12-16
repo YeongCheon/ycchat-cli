@@ -4,17 +4,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_client(true)
         .compile(
             &[
-                "protobuf/model/server.proto",
-                "protobuf/auth/auth.proto",
-                "protobuf/account/account.proto",
-                "protobuf/connect/connect.proto",
-                "protobuf/user/user.proto",
-                "protobuf/server/server.proto",
-                "protobuf/channel/channel.proto",
-                "protobuf/server/category/category.proto",
-                "protobuf/server/member/server_member.proto",
-                "protobuf/message/message.proto",
-                "protobuf/message/reaction.proto",
+                "protobuf/ycchat/v1/models/server.proto",
+                "protobuf/ycchat/v1/services/auth/auth.proto",
+                "protobuf/ycchat/v1/services/account/account.proto",
+                "protobuf/ycchat/v1/services/connect/connect.proto",
+                "protobuf/ycchat/v1/services/user/user.proto",
+                "protobuf/ycchat/v1/services/server/server.proto",
+                "protobuf/ycchat/v1/services/channel/channel.proto",
+                "protobuf/ycchat/v1/services/server/category/category.proto",
+                "protobuf/ycchat/v1/services/server/member/server_member.proto",
+                "protobuf/ycchat/v1/services/message/message.proto",
+                "protobuf/ycchat/v1/services/message/reaction.proto",
             ],
             &["protobuf/"],
         )?;

@@ -9,7 +9,7 @@ use tonic::body::BoxBody;
 use tonic::transport::Channel;
 use tower::Service;
 
-use super::ycchat_auth::SignInResponse;
+use super::ycchat::v1::services::auth::SignInResponse;
 
 pub struct AuthMiddleware {
     inner: Channel,

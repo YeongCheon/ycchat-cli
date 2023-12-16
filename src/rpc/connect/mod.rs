@@ -2,9 +2,9 @@ use std::error::Error;
 use std::sync::Arc;
 
 use super::interceptor::AuthMiddleware;
-use super::ycchat_auth::SignInResponse;
-use super::ycchat_connect::connect_client::ConnectClient;
-use super::ycchat_connect::{ConnectRequest, ConnectResponse};
+use super::ycchat::v1::services::auth::SignInResponse;
+use super::ycchat::v1::services::connect::connect_service_client::ConnectServiceClient;
+use super::ycchat::v1::services::connect::{ConnectRequest, ConnectResponse};
 
 use tokio::sync::Mutex;
 use tonic::transport::Channel;
@@ -12,7 +12,7 @@ use tonic::Streaming;
 use tower::ServiceBuilder;
 
 struct ConnectService {
-    client: ConnectClient<AuthMiddleware>,
+    client: ConnectServiceClient<AuthMiddleware>,
 }
 
 impl ConnectService {
@@ -25,7 +25,7 @@ impl ConnectService {
 
         let channel = ServiceBuilder::new().service(auth_middleware);
 
-        let client = ConnectClient::new(channel);
+        let client = ConnectServiceClient::new(channel);
 
         Ok(Self { client })
     }

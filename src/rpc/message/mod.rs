@@ -2,10 +2,10 @@ use std::error::Error;
 use std::sync::Arc;
 
 use super::interceptor::AuthMiddleware;
-use super::model::Message;
-use super::ycchat_auth::SignInResponse;
-use super::ycchat_message::message_client::MessageClient;
-use super::ycchat_message::{
+use super::ycchat::v1::models::Message;
+use super::ycchat::v1::services::auth::SignInResponse;
+use super::ycchat::v1::services::message::message_service_client::MessageServiceClient;
+use super::ycchat::v1::services::message::{
     AcknowledgeMessageRequest, DeleteMessageRequest, UpdateMessageRequest,
 };
 use tokio::sync::Mutex;
@@ -18,7 +18,7 @@ mod reaction;
 pub type MessageId = Ulid;
 
 pub struct MessageService {
-    client: MessageClient<AuthMiddleware>,
+    client: MessageServiceClient<AuthMiddleware>,
 }
 
 impl MessageService {
@@ -31,7 +31,7 @@ impl MessageService {
 
         let channel = ServiceBuilder::new().service(auth_middleware);
 
-        let client = MessageClient::new(channel);
+        let client = MessageServiceClient::new(channel);
 
         Ok(Self { client })
     }

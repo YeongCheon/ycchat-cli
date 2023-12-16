@@ -7,15 +7,17 @@ use tower::ServiceBuilder;
 use ulid::Ulid;
 
 use super::interceptor::AuthMiddleware;
-use super::model::User;
-use super::ycchat_auth::SignInResponse;
-use super::ycchat_user::user_client::UserClient;
-use super::ycchat_user::{CreateUserRequest, DeleteUserRequest, GetUserRequest, UpdateUserRequest};
+use super::ycchat::v1::models::User;
+use super::ycchat::v1::services::auth::SignInResponse;
+use super::ycchat::v1::services::user::{
+    user_service_client::UserServiceClient, CreateUserRequest, DeleteUserRequest, GetUserRequest,
+    UpdateUserRequest,
+};
 
 pub type UserId = Ulid;
 
 pub struct UserService {
-    client: UserClient<AuthMiddleware>,
+    client: UserServiceClient<AuthMiddleware>,
 }
 
 impl UserService {
@@ -28,7 +30,7 @@ impl UserService {
 
         let channel = ServiceBuilder::new().service(auth_middleware);
 
-        let client = UserClient::new(channel);
+        let client = UserServiceClient::new(channel);
 
         Ok(Self { client })
     }

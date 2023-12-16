@@ -1,9 +1,8 @@
 use std::{error::Error, fmt::Display, str::FromStr, sync::Arc};
 
 use crate::rpc::{
-    model::User,
     user::{UserId, UserService},
-    ycchat_auth::SignInResponse,
+    ycchat::v1::{models::User, services::auth::SignInResponse},
 };
 use enum_iterator::{all, Sequence};
 use inquire::{Select, Text};

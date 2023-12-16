@@ -5,7 +5,7 @@ use inquire::{required, Password, Select, Text};
 
 use crate::rpc::{
     auth::AuthService,
-    ycchat_auth::{SignInResponse, SignUpResponse},
+    ycchat::v1::services::auth::{SignInResponse, SignUpResponse},
 };
 
 #[derive(Debug, PartialEq, Sequence)]

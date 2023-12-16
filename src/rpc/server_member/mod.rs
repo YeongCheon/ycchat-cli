@@ -6,12 +6,12 @@ use tonic::transport::Channel;
 use tower::ServiceBuilder;
 
 use super::interceptor::AuthMiddleware;
-use super::model::ServerMember;
 use super::server::ServerId;
 use super::user::UserId;
-use super::ycchat_auth::SignInResponse;
-use super::ycchat_server::member::server_member_client::ServerMemberClient;
-use super::ycchat_server::member::{
+use super::ycchat::v1::models::ServerMember;
+use super::ycchat::v1::services::auth::SignInResponse;
+use super::ycchat::v1::services::server::member::server_member_service_client::ServerMemberServiceClient;
+use super::ycchat::v1::services::server::member::{
     GetServerMemberRequest, ListServerMembersRequest, ListServerMembersResponse,
 };
 // use super::ycchat_server_member::{
@@ -20,7 +20,7 @@ use super::ycchat_server::member::{
 // };
 
 pub struct ServerMemberService {
-    client: ServerMemberClient<AuthMiddleware>,
+    client: ServerMemberServiceClient<AuthMiddleware>,
 }
 
 impl ServerMemberService {
@@ -33,7 +33,7 @@ impl ServerMemberService {
 
         let channel = ServiceBuilder::new().service(auth_middleware);
 
-        let client = ServerMemberClient::new(channel);
+        let client = ServerMemberServiceClient::new(channel);
 
         Ok(Self { client })
     }

@@ -3,11 +3,11 @@ use std::sync::Arc;
 
 use super::interceptor::AuthMiddleware;
 use super::message::MessageId;
-use super::model::Channel;
 use super::server::ServerId;
-use super::ycchat_auth::SignInResponse;
-use super::ycchat_channel::channel_client::ChannelClient;
-use super::ycchat_channel::{
+use super::ycchat::v1::models::Channel;
+use super::ycchat::v1::services::auth::SignInResponse;
+use super::ycchat::v1::services::channel::channel_service_client::ChannelServiceClient;
+use super::ycchat::v1::services::channel::{
     CreateChannelRequest, DeleteChannelRequest, ListServerChannelsRequest,
     ListServerChannelsResponse, SpeechRequest, SpeechResponse, UpdateChannelRequest,
 };
@@ -19,7 +19,7 @@ use ulid::Ulid;
 pub type ChannelId = Ulid;
 
 struct ChannelService {
-    client: ChannelClient<AuthMiddleware>,
+    client: ChannelServiceClient<AuthMiddleware>,
 }
 
 impl ChannelService {
@@ -32,7 +32,7 @@ impl ChannelService {
 
         let channel = ServiceBuilder::new().service(auth_middleware);
 
-        let client = ChannelClient::new(channel);
+        let client = ChannelServiceClient::new(channel);
 
         Ok(Self { client })
     }

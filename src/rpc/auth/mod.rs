@@ -1,15 +1,17 @@
 use tonic::transport::Channel;
 
-use super::ycchat_auth::auth_client::AuthClient;
-use super::ycchat_auth::{SignInRequest, SignInResponse, SignUpRequest, SignUpResponse};
+use super::ycchat::v1::services::auth::auth_service_client::AuthServiceClient;
+use super::ycchat::v1::services::auth::{
+    SignInRequest, SignInResponse, SignUpRequest, SignUpResponse,
+};
 
 pub struct AuthService {
-    client: AuthClient<Channel>,
+    client: AuthServiceClient<Channel>,
 }
 
 impl AuthService {
     pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let client = AuthClient::connect("http://127.0.0.1:50051").await?;
+        let client = AuthServiceClient::connect("http://127.0.0.1:50051").await?;
         Ok(Self { client })
     }
 

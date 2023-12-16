@@ -2,11 +2,11 @@ use std::error::Error;
 use std::sync::Arc;
 
 use super::interceptor::AuthMiddleware;
-use super::model::Category;
 use super::server::ServerId;
-use super::ycchat_auth::SignInResponse;
-use super::ycchat_server::category::category_client::CategoryClient;
-use super::ycchat_server::category::{
+use super::ycchat::v1::models::Category;
+use super::ycchat::v1::services::auth::SignInResponse;
+use super::ycchat::v1::services::server::category::category_service_client::CategoryServiceClient;
+use super::ycchat::v1::services::server::category::{
     CreateCategoryRequest, DeleteCategoryRequest, GetCategoryRequest, GetCategoryResponse,
     ListCategoriesRequest, ListCategoriesResponse, UpdateCategoryRequest,
 };
@@ -18,7 +18,7 @@ use ulid::Ulid;
 pub type CategoryId = Ulid;
 
 pub struct CategoryService {
-    client: CategoryClient<AuthMiddleware>,
+    client: CategoryServiceClient<AuthMiddleware>,
 }
 
 impl CategoryService {
@@ -31,7 +31,7 @@ impl CategoryService {
 
         let channel = ServiceBuilder::new().service(auth_middleware);
 
-        let client = CategoryClient::new(channel);
+        let client = CategoryServiceClient::new(channel);
 
         Ok(Self { client })
     }

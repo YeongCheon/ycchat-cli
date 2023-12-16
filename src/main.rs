@@ -1,6 +1,6 @@
 use enum_iterator::{all, Sequence};
 use inquire::Select;
-use rpc::ycchat_auth::SignInResponse;
+use rpc::ycchat::v1::services::auth::SignInResponse;
 use std::{error::Error, fmt::Display, sync::Arc};
 use tokio::sync::Mutex;
 

@@ -2,10 +2,10 @@ use std::error::Error;
 use std::sync::Arc;
 
 use crate::rpc::interceptor::AuthMiddleware;
-use crate::rpc::model::Reaction;
-use crate::rpc::ycchat_auth::SignInResponse;
-use crate::rpc::ycchat_message::reaction_client::ReactionClient;
-use crate::rpc::ycchat_message::{
+use crate::rpc::ycchat::v1::models::Reaction;
+use crate::rpc::ycchat::v1::services::auth::SignInResponse;
+use crate::rpc::ycchat::v1::services::message::reaction_service_client::ReactionServiceClient;
+use crate::rpc::ycchat::v1::services::message::{
     AddReactionRequest, DeleteReactionRequest, ListReactionsRequest, ListReactionsResponse,
 };
 use tokio::sync::Mutex;
@@ -18,7 +18,7 @@ use super::MessageId;
 pub type ReactionId = Ulid;
 
 pub struct ReactionService {
-    client: ReactionClient<AuthMiddleware>,
+    client: ReactionServiceClient<AuthMiddleware>,
 }
 
 impl ReactionService {
@@ -31,7 +31,7 @@ impl ReactionService {
 
         let channel = ServiceBuilder::new().service(auth_middleware);
 
-        let client = ReactionClient::new(channel);
+        let client = ReactionServiceClient::new(channel);
 
         Ok(Self { client })
     }
