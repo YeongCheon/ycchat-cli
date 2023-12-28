@@ -1,3 +1,5 @@
+use std::{io, pin::Pin};
+
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::{
     prelude::{Color, Constraint, Direction, Layout},
@@ -9,25 +11,25 @@ use ratatui::{
 
 use super::{Scene, Ui};
 
-pub struct MainUi<'a> {
+pub struct WelcomeUi<'a> {
     selected_index: usize,
     list_items: Vec<ListItem<'a>>,
 }
 
-impl<'a> MainUi<'a> {
+impl<'a> WelcomeUi<'a> {
     pub fn new() -> Self {
         Self {
             selected_index: 0,
             list_items: vec![
                 ListItem::new(Line::from(Span::styled("Sign In", Style::default()))),
                 ListItem::new(Line::from(Span::styled("Sign Up", Style::default()))),
-                ListItem::new(Line::from(Span::styled("Exit ('q')", Style::default()))),
+                ListItem::new(Line::from(Span::styled("Exit", Style::default()))),
             ],
         }
     }
 }
 
-impl<'a> Ui for MainUi<'a> {
+impl<'a> Ui for WelcomeUi<'a> {
     fn ui(&self, f: &mut Frame) {
         let layout = Layout::default()
             .direction(Direction::Vertical)
@@ -59,40 +61,52 @@ impl<'a> Ui for MainUi<'a> {
         f.render_stateful_widget(list, layout[1], &mut state);
     }
 
-    fn event_handle(
-        &mut self,
+    fn event_handle<'me>(
+        &'me mut self,
         event: std::io::Result<crossterm::event::Event>,
-    ) -> std::io::Result<Scene> {
-        if let Event::Key(key) = event? {
-            if key.kind == event::KeyEventKind::Press {
-                match key.code {
-                    KeyCode::Up => {
-                        if self.selected_index > 0 {
-                            self.selected_index -= 1;
+    ) -> Pin<Box<dyn std::future::Future<Output = io::Result<Scene>> + Send + 'me>> {
+        let me: &'me mut WelcomeUi = self;
+
+        Box::pin(async move {
+            if let Event::Key(key) = event? {
+                if key.kind == event::KeyEventKind::Press {
+                    match key.code {
+                        KeyCode::Up => {
+                            if me.selected_index > 0 {
+                                me.selected_index -= 1;
+                            }
                         }
-                    }
-                    KeyCode::Down => {
-                        if self.selected_index < self.list_items.len() - 1 {
-                            self.selected_index += 1;
+                        KeyCode::Down => {
+                            if me.selected_index < me.list_items.len() - 1 {
+                                me.selected_index += 1;
+                            }
                         }
-                    }
-                    KeyCode::Enter => {
-                        if self.selected_index == 2 {
+                        KeyCode::Enter => match me.selected_index {
+                            0 => return Ok(Scene::SignIn),
+
+                            1 => return Ok(Scene::SignUp),
+
+                            2 => {
+                                return Ok(Scene::Quit);
+                            }
+
+                            _ => {
+                                return Ok(Scene::Main);
+                            }
+                        },
+                        KeyCode::Esc => {
                             return Ok(Scene::Quit);
                         }
+                        _ => {}
                     }
-                    KeyCode::Char('q') => {
-                        return Ok(Scene::Quit);
-                    }
-                    _ => {}
-                }
 
-                Ok(Scene::Main)
+                    Ok(Scene::Main)
+                } else {
+                    Ok(Scene::Main)
+                }
             } else {
                 Ok(Scene::Main)
             }
-        } else {
-            Ok(Scene::Main)
-        }
+        })
     }
 }

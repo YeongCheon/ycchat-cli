@@ -8,7 +8,7 @@ use ulid::Ulid;
 
 use super::interceptor::AuthMiddleware;
 use super::ycchat::v1::models::User;
-use super::ycchat::v1::services::auth::SignInResponse;
+use super::ycchat::v1::services::auth::{SignInRequest, SignInResponse};
 use super::ycchat::v1::services::user::{
     user_service_client::UserServiceClient, CreateUserRequest, DeleteUserRequest, GetUserRequest,
     UpdateUserRequest,
